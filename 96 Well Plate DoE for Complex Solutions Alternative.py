@@ -71,7 +71,9 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 	if well == 0:					# Checks if it is the first position of a reagent list, if it is this is a new reagent and needs a new pipette
 		P300.pick_up_tip()			# Equips the P300 with a new tip, if it does not have a tip
 		P10.pick_up.tip()			# Equips the P10 with a new tip, if it does not have a tip
-	if volume == float(0):				# Checks if the volume to be dispensed is 0
+	if volume < float(0):				# Checks that volume has not been set below 0, and if so raises an exception
+		raise Exception('Volume should not be below 0. Volume was set to: {}'.format(volume))
+	elif volume == float(0):			# Checks if the volume to be dispensed is 0
 		pass					# If the volume to be dispensed is 0 the step is skipped
 	elif volume <= float(30):			# Checks if the volume to be dispensed is less than 30 but greater than 0
 		P10.distribute(				# If the volume to be dispensed is less than 30, the P10 is selected for dispensing
@@ -91,10 +93,9 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		rate=1,					# Sets the dispensing rate of the pipette, set this to 0.5 if using a viscous fluid
 		new_tip='never')			# With this option declared the Opentron will not pick up a new pipette until explicitly instructed
 		P300.touch_tip(well_buffers96(well))	# With this option declared the pipette tip will be touched to the top of the wells after pipetting
-		P300.blow_out(well_buffers96(well))	# assigns another blow out, dispensing a gust of air after dispensing to clear the pipette tip of fluid
-	else:
+		P300.blow_out(well_buffers96(well))	# Assigns another blow out, dispensing a gust of air after dispensing to clear the pipette tip of fluid
+	else:						# If volume is not smaller or equal to 300, the size of the largest tips, then an exception is called 
 		raise Exception('Volume should not exceed 300. Volume was set to: {}'.format(volume))
-							# Creates an exception if the volume exceeds 300, the size of the largest tips
 	if well >= num_steps - 1:			# Checks if the end of the reagent list has been reached, Python lists start at 0 so y will only ever reach 5 in a list fo 6 elements len(z) needs to have 1 subtracted
 		P300.drop_tip()				# Disposes of the tip on the P300
 		P10.drop_tip()				# Disposes of the tip on the P10
