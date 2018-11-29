@@ -1,5 +1,5 @@
 # Author(s): Matt Burridge, Joshua Loh, Alex Laverick, Alidivinas Prusokas
-# Last modified: 14:00, 28/11/18
+# Last modified: 15:00, 29/11/18
 # Python 3.6.4
 # Please keep the author(s) attached to the code segment for traceability, if changes are made please append the authour list and modify the timestamp
 
@@ -40,18 +40,25 @@ P10 = instruments.P10_Single(		# Imports the P10 command
 #########################################################################################
 #########################################################################################
 
-reagents1 = [					# Input volumes in list within a list, must have no whitespaces
-	[40,7.5,40,40,7.5,40,7.5,40,7.5,40,7.5,40,0,40,0,40,20,40,40,0,20,40,0,20,0],
-	[40,7.5,7.5,40,7.5,7.5,7.5,7.5,40,40,23.75,7.5,7.5,7.5,40,40,23.75,40,23.75,7.5,7.5,40,40,40,40]
+Reagent = namedtuple('Reagent', ['stock', 'position', 'volumes'])
+
+reagents = [
+	Reagent(Stock1, 'A1', [40,7.5,40,40,7.5,40,7.5,40,7.5,40,7.5,40,0,40,0,40,20,40,40,0,20,40,0,20,0]),
+	Reagent(Stock1, 'A3', [40,7.5,7.5,40,7.5,7.5,7.5,7.5,40,40,23.75,7.5,7.5,7.5,40,40,23.75,40,23.75,7.5,7.5,40,40,40,40])
 ]
 
-reagent_pos1 = [	# Specify reagent positions, 1st list within list equates to first position in reagent_pos list
-	'A1','A3'	# list sequence A1 = MgCl2 stock, A3 = CaCL2 stock
-]
+#reagents1 = [					# Input volumes in list within a list, must have no whitespaces
+#	[40,7.5,40,40,7.5,40,7.5,40,7.5,40,7.5,40,0,40,0,40,20,40,40,0,20,40,0,20,0],
+#	[40,7.5,7.5,40,7.5,7.5,7.5,7.5,40,40,23.75,7.5,7.5,7.5,40,40,23.75,40,23.75,7.5,7.5,40,40,40,40]
+#]
 
-reagents2 = [		# Input volumes in list within a list must have no whitespaces
-	[]
-]
+#reagent_pos1 = [	# Specify reagent positions, 1st list within list equates to first position in reagent_pos list
+#	'A1','A3'	# list sequence A1 = MgCl2 stock, A3 = CaCL2 stock
+#]
+
+#reagents2 = [		# Input volumes in list within a list must have no whitespaces
+#	[]
+#]
 
 reagent_pos2 = []	# Specify reagent positions, 1st list within list equates to first position in reagent_pos list
 
@@ -78,7 +85,7 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 	elif volume <= float(30):			# Checks if the volume to be dispensed is less than 30 but greater than 0
 		P10.distribute(				# If the volume to be dispensed is less than 30, the P10 is selected for dispensing
 		volume,					# Sets the volume to be dispensed, in this case the value stored in x
-		Stock1(source),				# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
+		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
 		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
 		blow_out=True,				# After aspirating the Opentrons will aspirate a gust of air to clear out the pipette tip of fluid
 		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
@@ -87,7 +94,7 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 	elif volume <= float(300):			# If the volume to be dispensed is greater than 30
 		P300.distribute(			# Sets the pipette to be used as the P300 instead of the P10
 		volume,					# Allocates X as the volume to be dispensed
-		Stock1(source),				# Identifies the well position in the container to aspirate from (container Stock1 well position stored in source)
+		source,					# Identifies the well position in the container to aspirate from (container Stock1 well position stored in source)
 		well_buffers96(well).top(0.5),		# Sets which wells to dispense to, container well_buffers96 well position stored in y, also sets the height to aspirate from
 		blow_out=True,				# Assigns a blow out after dispensing reagents to clear the pipette tip of fluid
 		rate=1,					# Sets the dispensing rate of the pipette, set this to 0.5 if using a viscous fluid
@@ -103,7 +110,7 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 
 robot.home()						# Returns the Opentron pipette to the starting location
 
-[[run(volume, well, reagent_pos1[reagent_num], len(reagent)) for well, volume in enumerate(reagent)] for reagent_num, reagent in enumerate(reagents1)]
+[[run(volume, well, reagent.stock(reagent.position), len(reagent)) for well, volume in enumerate(reagent.volumes)] for reagent_num, reagent in enumerate(reagents)]
 							# Executes the entire protocol, iterating through the reagent lists and destinations, as such it shouldn't need to be adjusted unless the reagent list names change
 
 robot.comment("Protocol finished")			# Informs the user that the protocol is complete via comment on the Opentrons
