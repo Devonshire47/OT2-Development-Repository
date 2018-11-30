@@ -4,14 +4,14 @@
 # Please keep the author(s) attached to the code segment for traceability, if changes are made please append the authour list and modify the timestamp
 
 #####################################################################################################################################
-# The input from the code must be in list within a list, the sublist must contain the appropriate float type value and no whitespaces
+# The input from the code must be a list of 'Reagent' tuples. Each tuple must contain the stock variable, position in stock as a string, and list of volumes as float types with no whitespaces
 
 
 from opentrons import labware, instruments, robot	# Import Opentrons API
 from sqlite3 import IntegrityError			# Import sqlite IntegrityError for any custom containers
 
 								# Slot refers to the position on the Opentrons workspace
-tiprack_300 = labware.load("opentrons-tiprack-300ul", slot='1')	# Saves a 300ul tiprack to the variable tiprack_300
+tiprack_250 = labware.load("opentrons-tiprack-300ul", slot='1')	# Saves a 300ul tiprack to the variable tiprack_250
 tiprack_10 = labware.load("tiprack-10ul", slot='3')		# Universals_Cold_Box = custom container for 30 mL universal tubes
 Stock1 = labware.load("Universals_Cold_Box", slot='10')		# Universals_Cold_Box is a custom container, saved to the variable Stock1
 Stock2 = labware.load("Universals_Cold_Box", slot='5')		# Another Universals cold box saved to the variable Stock2.
@@ -20,9 +20,9 @@ trash = robot.fixed_trash					# Standard declaration of the trash container
 
 P300 = instruments.P300_Single(		# Import pipette types 
 	mount='right',			# If using different pipette tips, modify float 
-	aspirate_flow_rate=300,		# and pipette commands in command block (see below)
-	dispense_flow_rate=300,		# Assign tiprack and trash, make sure aspirate/dispense speeds
-	tip_racks=[tiprack_300],	# are suitable for reagent viscosity (can be further altered below)
+	aspirate_flow_rate=250,		# and pipette commands in command block (see below)
+	dispense_flow_rate=250,		# Assign tiprack and trash, make sure aspirate/dispense speeds
+	tip_racks=[tiprack_250],	# are suitable for reagent viscosity (can be further altered below)
 	trash_container=trash 
 )
 
@@ -40,33 +40,12 @@ P10 = instruments.P10_Single(		# Imports the P10 command
 #########################################################################################
 #########################################################################################
 
-Reagent = namedtuple('Reagent', ['stock', 'position', 'volumes'])
+Reagent = namedtuple('Reagent', ['stock', 'position', 'volumes'])	# Named tuple to store the stock, position and volume list of each reagent
 
-reagents = [
+reagents = [		# List of reagents and amounts to pipette
 	Reagent(Stock1, 'A1', [40,7.5,40,40,7.5,40,7.5,40,7.5,40,7.5,40,0,40,0,40,20,40,40,0,20,40,0,20,0]),
 	Reagent(Stock1, 'A3', [40,7.5,7.5,40,7.5,7.5,7.5,7.5,40,40,23.75,7.5,7.5,7.5,40,40,23.75,40,23.75,7.5,7.5,40,40,40,40])
-]
-
-#reagents1 = [					# Input volumes in list within a list, must have no whitespaces
-#	[40,7.5,40,40,7.5,40,7.5,40,7.5,40,7.5,40,0,40,0,40,20,40,40,0,20,40,0,20,0],
-#	[40,7.5,7.5,40,7.5,7.5,7.5,7.5,40,40,23.75,7.5,7.5,7.5,40,40,23.75,40,23.75,7.5,7.5,40,40,40,40]
-#]
-
-#reagent_pos1 = [	# Specify reagent positions, 1st list within list equates to first position in reagent_pos list
-#	'A1','A3'	# list sequence A1 = MgCl2 stock, A3 = CaCL2 stock
-#]
-
-#reagents2 = [		# Input volumes in list within a list must have no whitespaces
-#	[]
-#]
-
-reagent_pos2 = []	# Specify reagent positions, 1st list within list equates to first position in reagent_pos list
-
-# all_reagents = [reagents1, reagents2]		# Adds a randomizer that randomizers the reagent volumes with respect to the structure of the lists
-# all_reagents = Randomizer(all_reagents)	# This randomizer is commented out and will not run
-# reagents1 = all_reagents[0]			# To run the randomizer delete the # at the start of the lines so the text is no longer grey
-# reagents2 = all_reagents[1]			# If the randomizer is not wanted leave the # in
-						# If more than 2 reagents are being used, more lists can be added or expanded upon
+]			# Each tuple must contain the stock variable, position in stock as a string, and list of volumes as float types with no whitespaces
 
 #########################################################################################
 #########################################################################################
@@ -82,8 +61,8 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		raise Exception('Volume should not be below 0. Volume was set to: {}'.format(volume))
 	elif volume == float(0):			# Checks if the volume to be dispensed is 0
 		pass					# If the volume to be dispensed is 0 the step is skipped
-	elif volume <= float(30):			# Checks if the volume to be dispensed is less than 30 but greater than 0
-		P10.distribute(				# If the volume to be dispensed is less than 30, the P10 is selected for dispensing
+	elif volume <= float(10):			# Checks if the volume to be dispensed is less than or equal to 10 but greater than 0
+		P10.distribute(				# If the volume to be dispensed is less than or equal to 10, the P10 is selected for dispensing
 		volume,					# Sets the volume to be dispensed, in this case the value stored in x
 		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
 		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
@@ -91,7 +70,8 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
 		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
 		P10.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
-	elif volume <= float(300):			# If the volume to be dispensed is greater than 30
+	elif volume <= float(30):			# TODO - pipette multiple times if volume between 10 and 30 ul
+	elif volume <= float(250):			# If the volume to be dispensed is greater than 30 but less than 250
 		P300.distribute(			# Sets the pipette to be used as the P300 instead of the P10
 		volume,					# Allocates X as the volume to be dispensed
 		source,					# Identifies the well position in the container to aspirate from (container Stock1 well position stored in source)
@@ -101,7 +81,7 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		new_tip='never')			# With this option declared the Opentron will not pick up a new pipette until explicitly instructed
 		P300.touch_tip(well_buffers96(well))	# With this option declared the pipette tip will be touched to the top of the wells after pipetting
 		P300.blow_out(well_buffers96(well))	# Assigns another blow out, dispensing a gust of air after dispensing to clear the pipette tip of fluid
-	else:						# If volume is not smaller or equal to 300, the size of the largest tips, then an exception is called 
+	else:						# TODO - pipette multiple times if volume greater than 250 ul
 		raise Exception('Volume should not exceed 300. Volume was set to: {}'.format(volume))
 	if well >= num_steps - 1:			# Checks if the end of the reagent list has been reached, Python lists start at 0 so y will only ever reach 5 in a list fo 6 elements len(z) needs to have 1 subtracted
 		P300.drop_tip()				# Disposes of the tip on the P300
