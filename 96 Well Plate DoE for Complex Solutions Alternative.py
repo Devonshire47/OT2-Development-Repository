@@ -52,6 +52,16 @@ reagents = [		# List of reagents and amounts to pipette
 # THE FOLLOWING ALLOWS FOR ALTERNATING PIPETTE USE AND THE USE OF UP TWO LABWARE CONTAINING STOCKS
 # IF USING DIFFERENT LABWARE MAY NEED TO ALTER TOP/BOTTOM DISTANCE
 
+def distribute(pipette, volume, source, well):		# TODO reverse pipetting? touch_tip?
+	pipette.distribute(				# Selected pipette for dispensing
+		volume,					# Sets the volume to be dispensed, in this case the value stored in volume
+		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
+		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
+		blow_out=True,				# After aspirating the Opentrons will aspirate a gust of air to clear out the pipette tip of fluid
+		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
+		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
+		pipette.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
+
 def run(volume, well, source, num_steps):		# This function determines which is the most accurate pipette to use based on the volume to be dispensed, it also tracks which reagent to use in which well
 							# source is the source location of the reagent to be dispensed, informing the pipettes where to aspirate from
 	if well == 0:					# Checks if it is the first position of a reagent list, if it is this is a new reagent and needs a new pipette
@@ -62,46 +72,17 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 	elif volume == float(0):			# Checks if the volume to be dispensed is 0
 		pass					# If the volume to be dispensed is 0 the step is skipped
 	elif volume <= float(10):			# Checks if the volume to be dispensed is less than or equal to 10 but greater than 0
-		P10.distribute(				# If the volume to be dispensed is less than or equal to 10, the P10 is selected for dispensing
-		volume,					# Sets the volume to be dispensed, in this case the value stored in x
-		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
-		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
-		blow_out=True,				# After aspirating the Opentrons will aspirate a gust of air to clear out the pipette tip of fluid
-		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
-		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
-		P10.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
+		distribute(P10, volume, source, well)	# Pipette the exact volume using the P10
 		volume = 0				# Sets volume to 0 as completely pipetted the target volume
 	elif volume <= float(30):			# If the volume to be dispensed is between 10 and 30, recursively use the P10 until volume is below 30
-		P10.distribute(				# P10 is selected for dispensing
-		10,					# Sets the volume to be dispensed as 10
-		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
-		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
-		blow_out=True,				# After aspirating the Opentrons will aspirate a gust of air to clear out the pipette tip of fluid
-		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
-		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
-		P10.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
+		distribute(P10, 10, source, well)	# Pipette the maximum volume of the P10
 		volume = volume - 10			# Reduce volume variable by 10 to reflect volume pipetted
 		run(volume, well, source, num_steps)	# Recursively run function until finished
 	elif volume <= float(250):			# If volume is greater than 30 but less than 250
-		P300.distribute(			# Sets the pipette to be used as the P300 instead of the P10
-		volume,					# Allocates X as the volume to be dispensed
-		source,					# Identifies the well position in the container to aspirate from (container Stock1 well position stored in source)
-		well_buffers96(well).top(0.5),		# Sets which wells to dispense to, container well_buffers96 well position stored in y, also sets the height to aspirate from
-		blow_out=True,				# Assigns a blow out after dispensing reagents to clear the pipette tip of fluid
-		rate=1,					# Sets the dispensing rate of the pipette, set this to 0.5 if using a viscous fluid
-		new_tip='never')			# With this option declared the Opentron will not pick up a new pipette until explicitly instructed
-		P300.touch_tip(well_buffers96(well))	# With this option declared the pipette tip will be touched to the top of the wells after pipetting
-		P300.blow_out(well_buffers96(well))	# Assigns another blow out, dispensing a gust of air after dispensing to clear the pipette tip of fluid
+		distribute(P300, volume, source, well)	# Pipette the exact volume using the P300
 		volume = 0				# Sets volume to 0 as completely pipetted the target volume
 	else:						# If the volume to be dispensed over 250, recursively use the P300 until volume is below 30
-		P300.distribute(			# P300 is selected for dispensing
-		250,					# Sets the volume to be dispensed as 250
-		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
-		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
-		blow_out=True,				# After aspirating the Opentrons will aspirate a gust of air to clear out the pipette tip of fluid
-		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
-		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
-		P3000.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
+		distribute(P300, 250, source, well)	# Pipette the maximum volume of the P300 (250 as that is size of tips)
 		volume = volume - 250			# Reduce volume variable by 250 to reflect volume pipetted
 		run(volume, well, source, num_steps)	# Recursively run function until finished
 	if (well >= num_steps - 1) && volume <= 0:	# Checks if the end of the reagent list has been reached, Python lists start at 0 so y will only ever reach 5 in a list fo 6 elements len(z) needs to have 1 subtracted
