@@ -70,7 +70,18 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
 		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
 		P10.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
+		volume = 0
 	elif volume <= float(30):			# TODO - pipette multiple times if volume between 10 and 30 ul
+		P10.distribute(				# If the volume to be dispensed is less than or equal to 10, the P10 is selected for dispensing
+		10,					# Sets the volume to be dispensed, in this case the value stored in x
+		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
+		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
+		blow_out=True,				# After aspirating the Opentrons will aspirate a gust of air to clear out the pipette tip of fluid
+		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
+		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
+		P10.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
+		volume = volume - 10
+		run(valume, well, source, num_steps)
 	elif volume <= float(250):			# If the volume to be dispensed is greater than 30 but less than 250
 		P300.distribute(			# Sets the pipette to be used as the P300 instead of the P10
 		volume,					# Allocates X as the volume to be dispensed
@@ -82,8 +93,8 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		P300.touch_tip(well_buffers96(well))	# With this option declared the pipette tip will be touched to the top of the wells after pipetting
 		P300.blow_out(well_buffers96(well))	# Assigns another blow out, dispensing a gust of air after dispensing to clear the pipette tip of fluid
 	else:						# TODO - pipette multiple times if volume greater than 250 ul
-		raise Exception('Volume should not exceed 300. Volume was set to: {}'.format(volume))
-	if well >= num_steps - 1:			# Checks if the end of the reagent list has been reached, Python lists start at 0 so y will only ever reach 5 in a list fo 6 elements len(z) needs to have 1 subtracted
+		raise Exception('Volume should not exceed 250. Volume was set to: {}'.format(volume))
+	if (well >= num_steps - 1) && volume <= 0:			# Checks if the end of the reagent list has been reached, Python lists start at 0 so y will only ever reach 5 in a list fo 6 elements len(z) needs to have 1 subtracted
 		P300.drop_tip()				# Disposes of the tip on the P300
 		P10.drop_tip()				# Disposes of the tip on the P10
 
