@@ -71,18 +71,18 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
 		P10.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
 		volume = 0
-	elif volume <= float(30):			# TODO - pipette multiple times if volume between 10 and 30 ul
-		P10.distribute(				# If the volume to be dispensed is less than or equal to 10, the P10 is selected for dispensing
-		10,					# Sets the volume to be dispensed, in this case the value stored in x
+	elif volume <= float(30):			# If the volume to be dispensed is between 10 and 30, recursively use the P10 until volume is below 30
+		P10.distribute(				# P10 is selected for dispensing
+		10,					# Sets the volume to be dispensed as 10
 		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
 		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
 		blow_out=True,				# After aspirating the Opentrons will aspirate a gust of air to clear out the pipette tip of fluid
 		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
 		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
 		P10.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
-		volume = volume - 10
-		run(valume, well, source, num_steps)
-	elif volume <= float(250):			# If the volume to be dispensed is greater than 30 but less than 250
+		volume = volume - 10			# Reduce volume variable by 10 to reflect volume pipetted
+		run(volume, well, source, num_steps)	# Recursively run function until finished
+	elif volume <= float(250):			# If volume is greater than 30 but less than 250
 		P300.distribute(			# Sets the pipette to be used as the P300 instead of the P10
 		volume,					# Allocates X as the volume to be dispensed
 		source,					# Identifies the well position in the container to aspirate from (container Stock1 well position stored in source)
@@ -92,9 +92,18 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		new_tip='never')			# With this option declared the Opentron will not pick up a new pipette until explicitly instructed
 		P300.touch_tip(well_buffers96(well))	# With this option declared the pipette tip will be touched to the top of the wells after pipetting
 		P300.blow_out(well_buffers96(well))	# Assigns another blow out, dispensing a gust of air after dispensing to clear the pipette tip of fluid
-	else:						# TODO - pipette multiple times if volume greater than 250 ul
-		raise Exception('Volume should not exceed 250. Volume was set to: {}'.format(volume))
-	if (well >= num_steps - 1) && volume <= 0:			# Checks if the end of the reagent list has been reached, Python lists start at 0 so y will only ever reach 5 in a list fo 6 elements len(z) needs to have 1 subtracted
+	else:						# If the volume to be dispensed over 250, recursively use the P300 until volume is below 30
+		P300.distribute(			# P300 is selected for dispensing
+		250,					# Sets the volume to be dispensed as 250
+		source,					# Identifies which position in which container to aspirate from (container Stock1, position in the source variable)
+		well_buffers96(well).top(0.5),		# Sets which wells to dispense into, container well_buffers96 position stored in variable y, as well as the height to aspirate from
+		blow_out=True,				# After aspirating the Opentrons will aspirate a gust of air to clear out the pipette tip of fluid
+		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
+		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
+		P3000.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
+		volume = volume - 250			# Reduce volume variable by 250 to reflect volume pipetted
+		run(volume, well, source, num_steps)	# Recursively run function until finished
+	if (well >= num_steps - 1) && volume <= 0:	# Checks if the end of the reagent list has been reached, Python lists start at 0 so y will only ever reach 5 in a list fo 6 elements len(z) needs to have 1 subtracted
 		P300.drop_tip()				# Disposes of the tip on the P300
 		P10.drop_tip()				# Disposes of the tip on the P10
 
