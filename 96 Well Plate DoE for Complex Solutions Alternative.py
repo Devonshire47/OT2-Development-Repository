@@ -1,5 +1,5 @@
 # Author(s): Matt Burridge, Joshua Loh, Alex Laverick, Alidivinas Prusokas
-# Last modified: 15:00, 29/11/18
+# Last modified: 13:00, 03/12/18
 # Python 3.6.4
 # Please keep the author(s) attached to the code segment for traceability, if changes are made please append the authour list and modify the timestamp
 
@@ -10,13 +10,13 @@
 from opentrons import labware, instruments, robot	# Import Opentrons API
 from sqlite3 import IntegrityError			# Import sqlite IntegrityError for any custom containers
 
-								# Slot refers to the position on the Opentrons workspace
-tiprack_250 = labware.load("opentrons-tiprack-300ul", slot='1')	# Saves a 300ul tiprack to the variable tiprack_250
-tiprack_10 = labware.load("tiprack-10ul", slot='3')		# Universals_Cold_Box = custom container for 30 mL universal tubes
-Stock1 = labware.load("Universals_Cold_Box", slot='10')		# Universals_Cold_Box is a custom container, saved to the variable Stock1
-Stock2 = labware.load("Universals_Cold_Box", slot='5')		# Another Universals cold box saved to the variable Stock2.
-well_buffers96 = labware.load("96-flat", slot='2')		# 96 Flat well plate saved to the variable well_buffers96
-trash = robot.fixed_trash					# Standard declaration of the trash container
+									# Slot refers to the position on the Opentrons workspace
+tiprack_250 = labware.load("opentrons-tiprack-300ul", slot='1')		# Saves a 300ul tiprack to the variable tiprack_250
+tiprack_10 = labware.load("tiprack-10ul", slot='3')			# Universals_Cold_Box = custom container for 30 mL universal tubes
+Stock1 = labware.load("Universals_Cold_Box", slot='10')			# Universals_Cold_Box is a custom container, saved to the variable Stock1
+Stock2 = labware.load("Universals_Cold_Box", slot='5')			# Another Universals cold box saved to the variable Stock2.
+well_buffers96 = labware.load("96-flat", slot='2')			# 96 Flat well plate saved to the variable well_buffers96
+trash = robot.fixed_trash						# Standard declaration of the trash container
 
 P300 = instruments.P300_Single(		# Import pipette types 
 	mount='right',			# If using different pipette tips, modify float 
@@ -70,7 +70,7 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		rate=1,					# Sets the rate for aspirating, if using viscous fluids lower this to 0.5 for accuracy
 		new_tip='never')			# If set to never, the same tip will be used to aspirate the reagent to every well
 		P10.blow_out(well_buffers96(well))	# Sets another blow out of the pipette
-		volume = 0
+		volume = 0				# Sets volume to 0 as completely pipetted the target volume
 	elif volume <= float(30):			# If the volume to be dispensed is between 10 and 30, recursively use the P10 until volume is below 30
 		P10.distribute(				# P10 is selected for dispensing
 		10,					# Sets the volume to be dispensed as 10
@@ -92,6 +92,7 @@ def run(volume, well, source, num_steps):		# This function determines which is t
 		new_tip='never')			# With this option declared the Opentron will not pick up a new pipette until explicitly instructed
 		P300.touch_tip(well_buffers96(well))	# With this option declared the pipette tip will be touched to the top of the wells after pipetting
 		P300.blow_out(well_buffers96(well))	# Assigns another blow out, dispensing a gust of air after dispensing to clear the pipette tip of fluid
+		volume = 0				# Sets volume to 0 as completely pipetted the target volume
 	else:						# If the volume to be dispensed over 250, recursively use the P300 until volume is below 30
 		P300.distribute(			# P300 is selected for dispensing
 		250,					# Sets the volume to be dispensed as 250
